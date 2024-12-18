@@ -45,7 +45,10 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final token = response.data['data'];
+        final user = response.data['user']; // Assuming the user data is returned here
         await _prefs.setString('auth_token', token);
+        await _prefs.setString('current_user', jsonEncode(user)); // Store the user data
+        print(_prefs.getString('current_user'));
         return token;
       } else {
         throw Exception('Failed to login');
@@ -69,7 +72,10 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final token = response.data['data'];
+        final user = response.data['user']; // Assuming the user data is returned here
         await _prefs.setString('auth_token', token);
+        await _prefs.setString('current_user', jsonEncode(user)); // Store the user data
+        print(_prefs.getString('current_user'));
         return token;
       } else {
         throw Exception('Failed to register');
@@ -90,6 +96,7 @@ class AuthService {
             options: Options(headers: {'Authorization': 'Bearer $token'}));
 
         await _prefs.remove('auth_token');
+        await _prefs.remove('current_user'); // Remove the user data upon logout
       }
     } catch (e) {
       print("Logout Error: $e");
@@ -107,5 +114,15 @@ class AuthService {
   Future<String?> getToken() async {
     await _ensureInitialized();
     return _prefs.getString('auth_token');
+  }
+
+  // Get current user
+  Future<Map<String, dynamic>?> getCurrentUser() async {
+    await _ensureInitialized();
+    String? userJson = _prefs.getString('current_user');
+    if (userJson != null) {
+      return jsonDecode(userJson);
+    }
+    return null;
   }
 }

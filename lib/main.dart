@@ -30,6 +30,7 @@ class VideoStreamingApp extends StatelessWidget {
       ),
       initialRoute: '/home',
       routes: {
+        '/profile': (context) => ProfilePage(),
         '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/home': (context) => MainScreen(),

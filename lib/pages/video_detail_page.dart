@@ -62,9 +62,24 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
         ),
       );
     } else {
-      // Call the API to like the video
-      await _videoService.incrementLike(widget.videoId);
-      setState(() {}); // Update UI after liking the video
+      // Get current user
+      final currentUser = await _authService.getCurrentUser();
+      if (currentUser != null) {
+        String userId = currentUser['id']; // Assuming 'id' is part of the user data
+        final video = await _videoService.fetchVideoDetail(widget.videoId);
+        List likes = video['video']['likes'];
+
+        if (likes.contains(userId)) {
+          setState(() {
+            likes.remove(userId); // Unlike the video if already liked
+          });
+        } else {
+          setState(() {
+            likes.add(userId); // Like the video
+          });
+        }
+        await _videoService.incrementLike(widget.videoId); // Update likes on the server
+      }
     }
   }
 
@@ -119,47 +134,49 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
                         style: const TextStyle(
                             fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Text(video['description']),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('${likes.length} likes'),
                           IconButton(
-                            icon: const Icon(Icons.thumb_up),
-                            onPressed: _likeVideo, // Call likeVideo function
+                            onPressed: _likeVideo,
+                            icon: Icon(
+                              Icons.thumb_up,
+                              color: likes.contains(AuthService().getCurrentUser())
+                                  ? Colors.blue
+                                  : Colors.grey,
+                            ),
                           ),
+                          Text('${likes.length} likes'),
                         ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('Related Videos',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: relatedVideos.length,
+                        itemBuilder: (context, index) {
+                          final relatedVideo = relatedVideos[index];
+                          return ListTile(
+                            title: Text(relatedVideo['title']),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => VideoDetailPage(
+                                      videoId: relatedVideo['id']),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
                     ],
                   ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(
-                    'Related Videos',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ...List.generate(
-                  relatedVideos.length,
-                  (index) {
-                    final related = relatedVideos[index];
-                    return ListTile(
-                      title: Text(related['title']),
-                      subtitle: Text('${related['views']} views'),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VideoDetailPage(
-                                videoId: related['id'].toString()),
-                          ),
-                        );
-                      },
-                    );
-                  },
                 ),
               ],
             );

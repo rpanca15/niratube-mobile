@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../services/auth_service.dart';
 import '../models/video_model.dart';
+import '../models/category_model.dart';
 
 class VideoService {
   final Dio _dio = Dio(BaseOptions(
@@ -10,6 +11,57 @@ class VideoService {
   ));
 
   final AuthService _authService = AuthService();
+
+  // Fungsi untuk mendapatkan kategori
+  Future<List<Category>> fetchCategories() async {
+    try {
+      final response = await _dio.get('/categories');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> categoriesJson = response.data['data'];
+        return categoriesJson
+            .map((category) => Category.fromJson(category))
+            .toList();
+      } else {
+        throw Exception("Failed to load categories");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+
+  Future<void> addVideo({
+    required String base64Video,
+    required String title,
+    required String description,
+    required String categoryId,
+    required String privacy,
+  }) async {
+    try {
+      final token = await _authService.getToken();
+      if (token == null) throw Exception("User is not authenticated");
+
+      final formData = {
+        'video': base64Video,
+        'title': title,
+        'description': description,
+        'category_id': categoryId,
+        'privacy': privacy,
+      };
+
+      final response = await _dio.post(
+        '/videos',
+        data: formData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode != 201) {
+        throw Exception("Failed to add video");
+      }
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
 
   // Fungsi untuk mendapatkan semua video dengan pencarian
   Future<List<Video>> fetchVideos({String query = ''}) async {
@@ -37,7 +89,7 @@ class VideoService {
   // Mendapatkan detail video dan video terkait
   Future<Map<String, dynamic>> fetchVideoDetail(String id) async {
     try {
-      final response = await _dio.get('/videos/$id');
+      final response = await _dio.get('/videos/$id/related');
 
       if (response.statusCode == 200) {
         return {

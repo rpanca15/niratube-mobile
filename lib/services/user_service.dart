@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_service.dart'; // Import AuthService
 
 class UserService {
@@ -16,7 +15,7 @@ class UserService {
     return await AuthService().getToken();
   }
 
-  // Mengambil profil pengguna berdasarkan token login
+  // Mendapatkan profil pengguna berdasarkan token login
   Future<Map<String, dynamic>> getUserProfile() async {
     final token = await _getToken();
     try {
@@ -28,7 +27,8 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        return response
+            .data['data']; // Sesuaikan dengan struktur respons dari API Anda
       } else {
         throw Exception('Failed to load user profile');
       }
@@ -39,7 +39,7 @@ class UserService {
   }
 
   // Mengambil daftar pengguna
-  Future<Map<String, dynamic>> getUsers() async {
+  Future<List<Map<String, dynamic>>> getUsers() async {
     final token = await _getToken();
     try {
       final response = await _dio.get(
@@ -50,7 +50,7 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        return List<Map<String, dynamic>>.from(response.data['data']);
       } else {
         throw Exception('Failed to load users');
       }
@@ -65,14 +65,15 @@ class UserService {
     final token = await _getToken();
     try {
       final response = await _dio.get(
-        '/users/$userId',
+        '/users/$userId', // Endpoint sesuai dengan API Anda
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
         ),
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        return response
+            .data['data']; // Sesuaikan dengan struktur respons dari API Anda
       } else {
         throw Exception('Failed to load user');
       }
@@ -82,31 +83,9 @@ class UserService {
     }
   }
 
-  // Membuat pengguna baru
-  Future<Map<String, dynamic>> createUser(Map<String, dynamic> userData) async {
-    final token = await _getToken();
-    try {
-      final response = await _dio.post(
-        '/users',
-        data: userData,
-        options: Options(
-          headers: {'Authorization': 'Bearer $token'},
-        ),
-      );
-
-      if (response.statusCode == 201) {
-        return response.data;
-      } else {
-        throw Exception('Failed to create user');
-      }
-    } catch (e) {
-      print('Error creating user: $e');
-      throw Exception('Failed to create user');
-    }
-  }
-
   // Mengupdate data pengguna
-  Future<Map<String, dynamic>> updateUser(String userId, Map<String, dynamic> userData) async {
+  Future<Map<String, dynamic>> updateUser(
+      String userId, Map<String, dynamic> userData) async {
     final token = await _getToken();
     try {
       final response = await _dio.put(
@@ -118,7 +97,8 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        return response
+            .data['data']; // Sesuaikan dengan struktur respons dari API Anda
       } else {
         throw Exception('Failed to update user');
       }

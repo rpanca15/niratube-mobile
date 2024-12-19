@@ -10,12 +10,6 @@ import 'pages/register_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await AuthService().initializePrefs();
-  } catch (e) {
-    print("Error in initializing prefs: $e");
-  }
-
   runApp(VideoStreamingApp());
 }
 
@@ -64,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // Cek status login
   Future<void> _checkLoginStatus() async {
-    bool isLoggedIn = await AuthService().isLoggedIn();
+    bool isLoggedIn = await AuthService().isAuthenticated();
     setState(() {
       _isLoggedIn = isLoggedIn;
     });
@@ -135,10 +129,10 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.add_circle_outline),
               label: 'Add Video',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
+            // BottomNavigationBarItem(
+            //   icon: Icon(Icons.person),
+            //   label: 'Profile',
+            // ),
           ],
         ),
       ),

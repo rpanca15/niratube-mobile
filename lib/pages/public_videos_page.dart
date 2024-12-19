@@ -33,7 +33,7 @@ class _PublicVideosPageState extends State<PublicVideosPage> {
   }
 
   _checkLoginStatus() async {
-    bool isLoggedIn = await AuthService().isLoggedIn();
+    bool isLoggedIn = await AuthService().isAuthenticated();
     setState(() {
       _isLoggedIn = isLoggedIn;
     });
@@ -182,7 +182,8 @@ class _PublicVideosPageState extends State<PublicVideosPage> {
                                   'https://picsum.photos/200/300'), // Random image URL
                               fit: BoxFit.cover,
                             ),
-                            borderRadius: BorderRadius.horizontal(left: Radius.circular(10)),
+                            borderRadius: BorderRadius.horizontal(
+                                left: Radius.circular(10)),
                           ),
                         ),
                         // Right side - Video Details
@@ -195,7 +196,8 @@ class _PublicVideosPageState extends State<PublicVideosPage> {
                                 Text(
                                   video.title,
                                   style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w600),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),

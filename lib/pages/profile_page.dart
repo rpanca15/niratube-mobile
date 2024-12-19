@@ -31,17 +31,23 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      // Mengambil data profil pengguna berdasarkan token login
-      var response = await userService.getUserProfile();  // Menggunakan method getUserProfile dari UserService
-      if (response != null && response['data'] != null) {
-        setState(() {
-          userData = response['data'];
-          _nameController.text = userData['name'];
-          _emailController.text = userData['email'];
-          isLoading = false; // Data telah dimuat
-        });
+      // Mengambil token dari SharedPreferences melalui AuthService
+      final token = await authService.getToken();
+      if (token != null) {
+        // Mendapatkan profil pengguna berdasarkan token
+        var response = await userService.getUserProfile();
+        if (response != null) {
+          setState(() {
+            userData = response;
+            _nameController.text = userData['name'];
+            _emailController.text = userData['email'];
+            isLoading = false; // Data telah dimuat
+          });
+        } else {
+          _showError("User data not found.");
+        }
       } else {
-        _showError("User data not found.");
+        _showError("User not logged in.");
       }
     } catch (e) {
       setState(() {
@@ -61,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
       var response =
           await userService.updateUser(userData['id'].toString(), updatedData);
       setState(() {
-        userData = response['data'];
+        userData = response;
         isEditing = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +113,8 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: EdgeInsets.all(16.0),
         child: isLoading
             ? Center(
-                child: CircularProgressIndicator()) // Menampilkan indikator loading saat memuat data
+                child:
+                    CircularProgressIndicator()) // Menampilkan indikator loading saat memuat data
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

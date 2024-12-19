@@ -71,30 +71,75 @@ class RegisterPage extends StatelessWidget {
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: () async {
-                  final name = nameController.text.trim();
-                  final email = emailController.text.trim();
-                  final password = passwordController.text.trim();
-                  final confirmPassword = confirmPasswordController.text.trim();
-
-                  if (password != confirmPassword) {
+                  // Validasi input pengguna
+                  if (nameController.text.trim().isEmpty ||
+                      emailController.text.trim().isEmpty ||
+                      passwordController.text.isEmpty ||
+                      confirmPasswordController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Passwords do not match!")),
+                      const SnackBar(
+                        content: Text("All fields are required!"),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                     return;
                   }
 
-                  final token = await AuthService().register(
-                    name,
-                    email,
-                    password,
-                    confirmPassword,
+                  final name = nameController.text.trim();
+                  final email = emailController.text.trim();
+                  final password = passwordController.text;
+                  final confirmPassword = confirmPasswordController.text;
+
+                  if (password != confirmPassword) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Passwords do not match!"),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Tampilkan indikator loading
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (BuildContext context) {
+                      return const Center(child: CircularProgressIndicator());
+                    },
                   );
 
-                  if (token != null) {
-                    Navigator.pushReplacementNamed(context, '/home');
-                  } else {
+                  try {
+                    // Panggil method register dari AuthService
+                    final response = await AuthService().register(
+                      name,
+                      email,
+                      password,
+                      confirmPassword,
+                    );
+
+                    // Sembunyikan indikator loading
+                    Navigator.pop(context);
+
+                    // Jika berhasil, alihkan ke halaman login atau home
+                    if (response['user'] != null) {
+                      Navigator.pushReplacementNamed(context, '/home');
+                    } else {
+                      throw Exception('Registration failed: Unknown error');
+                    }
+                  } catch (e) {
+                    // Menyembunyikan indikator loading jika error terjadi
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+
+                    // Tampilkan pesan kesalahan
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Registration failed!")),
+                      SnackBar(
+                        content:
+                            Text(e.toString().replaceAll('Exception: ', '')),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                   }
                 },

@@ -23,6 +23,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     super.initState();
     _videoData = _videoService.fetchVideoDetail(widget.videoId);
 
+    // Initialize video player once data is fetched
     _videoData.then((data) {
       final video = data['video'];
       final videoUrl = 'http://localhost:8000/storage/videos/${video['video']}';
@@ -43,8 +44,37 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     });
   }
 
+  // Play/Pause video
+  void _togglePlayPause() {
+    if (_controller!.value.isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
+    }
+    setState(() {});
+  }
+
+  // Skip forward
+  void _skipForward() {
+    final currentPosition = _controller!.value.position;
+    final newPosition =
+        currentPosition + Duration(seconds: 10); // Skip 10 seconds forward
+    _controller!.seekTo(newPosition);
+  }
+
+  // Skip backward
+  void _skipBackward() {
+    final currentPosition = _controller!.value.position;
+    final newPosition =
+        currentPosition - Duration(seconds: 10); // Skip 10 seconds backward
+    if (newPosition >= Duration.zero) {
+      _controller!.seekTo(newPosition);
+    }
+  }
+
+  // Like/unlike video
   void _likeVideo() async {
-    bool loggedIn = await _authService.isLoggedIn();
+    bool loggedIn = await _authService.isAuthenticated();
     if (!loggedIn) {
       showDialog(
         context: context,
@@ -62,23 +92,14 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
         ),
       );
     } else {
-      // Get current user
-      final currentUser = await _authService.getCurrentUser();
-      if (currentUser != null) {
-        String userId = currentUser['id']; // Assuming 'id' is part of the user data
-        final video = await _videoService.fetchVideoDetail(widget.videoId);
-        List likes = video['video']['likes'];
-
-        if (likes.contains(userId)) {
-          setState(() {
-            likes.remove(userId); // Unlike the video if already liked
-          });
-        } else {
-          setState(() {
-            likes.add(userId); // Like the video
-          });
-        }
-        await _videoService.incrementLike(widget.videoId); // Update likes on the server
+      try {
+        // Call the API to increment like
+        await _videoService.incrementLike(widget.videoId);
+        setState(() {}); // Refresh the page to reflect the change
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error liking the video: $e')),
+        );
       }
     }
   }
@@ -101,7 +122,6 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
           } else {
             final video = snapshot.data!['video'];
             final relatedVideos = snapshot.data!['relatedVideos'];
-            List likes = video['likes'];
 
             return ListView(
               children: [
@@ -121,6 +141,28 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
                               backgroundColor: Colors.black,
                             ),
                           ),
+                          // Controls for Play/Pause, Skip, etc.
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.replay_10),
+                                onPressed: _skipBackward,
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _controller!.value.isPlaying
+                                      ? Icons.pause
+                                      : Icons.play_arrow,
+                                ),
+                                onPressed: _togglePlayPause,
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.forward_10),
+                                onPressed: _skipForward,
+                              ),
+                            ],
+                          ),
                         ],
                       )
                     : const Center(child: CircularProgressIndicator()),
@@ -136,39 +178,29 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
                       ),
                       const SizedBox(height: 10),
                       Text(video['description']),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: _likeVideo,
-                            icon: Icon(
-                              Icons.thumb_up,
-                              color: likes.contains(AuthService().getCurrentUser())
-                                  ? Colors.blue
-                                  : Colors.grey,
-                            ),
-                          ),
-                          Text('${likes.length} likes'),
-                        ],
+                      const SizedBox(height: 10),
+                      Text("Likes: ${video['likes_count'] ?? 0}"),
+                      IconButton(
+                        icon: Icon(Icons.thumb_up),
+                        onPressed: _likeVideo, // Call the like/unlike method
                       ),
                       const SizedBox(height: 20),
-                      const Text('Related Videos',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
+                      Text('Related Videos', style: TextStyle(fontSize: 18)),
                       ListView.builder(
                         shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: relatedVideos.length,
                         itemBuilder: (context, index) {
                           final relatedVideo = relatedVideos[index];
                           return ListTile(
                             title: Text(relatedVideo['title']),
                             onTap: () {
+                              // Navigate to the selected related video detail page
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => VideoDetailPage(
-                                      videoId: relatedVideo['id']),
+                                    videoId: relatedVideo['id'].toString(),
+                                  ),
                                 ),
                               );
                             },
@@ -184,11 +216,5 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
         },
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 }

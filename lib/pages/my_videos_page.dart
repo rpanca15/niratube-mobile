@@ -98,16 +98,16 @@ class MyVideosTab extends StatelessWidget {
                 ),
                 child: ListTile(
                   contentPadding: EdgeInsets.all(16.0),
-                  title: Text(video.title, style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(video.title,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(video.description),
                   leading: Icon(Icons.video_library, color: Colors.blue),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => VideoDetailPage(
-                          videoId: video.id.toString(), // Ubah menjadi string jika perlu
-                        ),
+                        builder: (context) =>
+                            VideoDetailPage(videoId: video.id.toString()),
                       ),
                     );
                   },
@@ -117,11 +117,11 @@ class MyVideosTab extends StatelessWidget {
                       IconButton(
                         icon: Icon(Icons.edit, color: Colors.blue),
                         onPressed: () {
-                          // Navigate to the edit page
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => EditVideoPage(videoId: video.id.toString()),
+                              builder: (context) =>
+                                  EditVideoPage(videoId: video.id.toString()),
                             ),
                           );
                         },
@@ -129,7 +129,6 @@ class MyVideosTab extends StatelessWidget {
                       IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
-                          // Call delete function
                           _showDeleteDialog(context, video.id);
                         },
                       ),
@@ -153,16 +152,16 @@ class MyVideosTab extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Dismiss the dialog
+              Navigator.pop(context);
             },
             child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              // Call delete function
               await _videoService.deleteVideo(videoId.toString());
-              Navigator.pop(context); // Dismiss the dialog
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Video deleted successfully')));
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Video deleted successfully')));
             },
             child: Text('Delete'),
           ),
@@ -203,7 +202,8 @@ class LikedVideosTab extends StatelessWidget {
                 ),
                 child: ListTile(
                   contentPadding: EdgeInsets.all(16.0),
-                  title: Text(video.title, style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(video.title,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(video.description),
                   leading: Icon(Icons.favorite, color: Colors.red),
                   onTap: () {
@@ -211,7 +211,8 @@ class LikedVideosTab extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => VideoDetailPage(
-                          videoId: video.id.toString(), // Ubah menjadi string jika perlu
+                          videoId: video.id
+                              .toString(), // Ubah menjadi string jika perlu
                         ),
                       ),
                     );
@@ -225,4 +226,3 @@ class LikedVideosTab extends StatelessWidget {
     );
   }
 }
- 

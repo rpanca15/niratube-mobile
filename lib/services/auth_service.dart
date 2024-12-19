@@ -3,126 +3,86 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static final AuthService _instance = AuthService._internal();
-  factory AuthService() => _instance;
-
   final Dio _dio = Dio(BaseOptions(
     baseUrl: 'http://localhost:8000/api',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     },
   ));
 
-  late SharedPreferences _prefs;
-
-  // Konstruktor private
-  AuthService._internal();
-
-  // Inisialisasi SharedPreferences
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-  }
-
-  // Memastikan SharedPreferences telah diinisialisasi
-  Future<void> _ensureInitialized() async {
-    if (!(_prefs != null)) {
-      await _initPrefs();
-    }
-  }
-
-  // Method untuk memulai inisialisasi SharedPreferences (bisa dipanggil di main.dart)
-  Future<void> initializePrefs() async {
-    await _initPrefs();
-  }
-
-  // Login
-  Future<String?> login(String email, String password) async {
+  // Fungsi untuk login dan mendapatkan token
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final response = await _dio.post('/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final response = await _dio.post(
+        '/login',
+        data: {
+          'email': email,
+          'password': password,
+        },
+      );
 
-      if (response.statusCode == 200) {
-        final token = response.data['data'];
-        final user = response.data['user']; // Assuming the user data is returned here
-        await _prefs.setString('auth_token', token);
-        await _prefs.setString('current_user', jsonEncode(user)); // Store the user data
-        print(_prefs.getString('current_user'));
-        return token;
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // Menyimpan token yang diterima ke SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', response.data['data']);
+
+        return {'token': response.data['data']}; // Mengembalikan token
       } else {
         throw Exception('Failed to login');
       }
     } catch (e) {
-      print("Login Error: $e");
-      return null;
+      print('Login Error: $e');
+      throw Exception('Login failed');
     }
   }
 
-  // Register
-  Future<String?> register(String name, String email, String password,
-      String passwordConfirmation) async {
+  Future<Map<String, dynamic>> register(String name, String email,
+      String password, String passwordConfirmation) async {
     try {
-      final response = await _dio.post('/register', data: {
-        'name': name,
-        'email': email,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-      });
+      print('Attempting registration with email: $email'); // Debug log
 
-      if (response.statusCode == 200) {
-        final token = response.data['data'];
-        final user = response.data['user']; // Assuming the user data is returned here
-        await _prefs.setString('auth_token', token);
-        await _prefs.setString('current_user', jsonEncode(user)); // Store the user data
-        print(_prefs.getString('current_user'));
-        return token;
+      final response = await _dio.post(
+        '/register',
+        data: {
+          'name': name,
+          'email': email,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+
+      // Menangani respons jika berhasil
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // Mengembalikan data user tanpa menyimpan token
+        return {'user': response.data['data']};
       } else {
-        throw Exception('Failed to register');
+        throw Exception(
+            'Registration failed: ${response.data['message'] ?? 'Unknown error'}');
       }
     } catch (e) {
-      print("Registration Error: $e");
-      return null;
+      print('Registration Error: $e'); // Debug log
+      throw Exception('Registration failed: $e');
     }
   }
 
-  // Logout
-  Future<void> logout() async {
-    try {
-      String? token = _prefs.getString('auth_token');
-
-      if (token != null) {
-        await _dio.post('/logout',
-            options: Options(headers: {'Authorization': 'Bearer $token'}));
-
-        await _prefs.remove('auth_token');
-        await _prefs.remove('current_user'); // Remove the user data upon logout
-      }
-    } catch (e) {
-      print("Logout Error: $e");
-    }
-  }
-
-  // Cek apakah sudah login
-  Future<bool> isLoggedIn() async {
-    await _ensureInitialized();
-    String? token = _prefs.getString('auth_token');
-    return token != null;
-  }
-
-  // Mendapatkan token yang disimpan
+  // Fungsi untuk mendapatkan token yang disimpan
   Future<String?> getToken() async {
-    await _ensureInitialized();
-    return _prefs.getString('auth_token');
+    final prefs = await SharedPreferences.getInstance();
+    return prefs
+        .getString('access_token'); // Mengambil token dari SharedPreferences
   }
 
-  // Get current user
-  Future<Map<String, dynamic>?> getCurrentUser() async {
-    await _ensureInitialized();
-    String? userJson = _prefs.getString('current_user');
-    if (userJson != null) {
-      return jsonDecode(userJson);
-    }
-    return null;
+  // Fungsi untuk logout dan menghapus token
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs
+        .remove('access_token'); // Menghapus token dari SharedPreferences
+  }
+
+  // Fungsi untuk memeriksa apakah token masih valid
+  Future<bool> isAuthenticated() async {
+    final token = await getToken();
+    return token != null;
   }
 }

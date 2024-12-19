@@ -89,23 +89,9 @@ class _PublicVideosPageState extends State<PublicVideosPage> {
             _isLoggedIn
                 ? PopupMenuButton<String>(
                     onSelected: (value) {
-                      if (value == 'profile') {
-                        Navigator.pushNamed(context, '/profile');
-                      } else if (value == 'logout') {
-                        _logout();
-                      }
+                      _logout();
                     },
                     itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'profile',
-                        child: Row(
-                          children: [
-                            Icon(Icons.account_circle, color: Colors.blue),
-                            SizedBox(width: 10),
-                            Text('Profile', style: TextStyle(fontSize: 14)),
-                          ],
-                        ),
-                      ),
                       PopupMenuItem(
                         value: 'logout',
                         child: Row(
